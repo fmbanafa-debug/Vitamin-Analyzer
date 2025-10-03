@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health & Vitamin Navigator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .eng-blue { background-color: #1a3a6b; }
+        .eng-teal { background-color: #00c49a; }
+        .eng-orange { background-color: #ff8042; }
+        .eng-gray { background-color: #f0f2f5; }
+
+        .calculator-card {
+            background-color: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s ease-in-out;
+        }
+
+        .result-card {
+             background-color: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transform: scale(0.95);
+            opacity: 0;
+            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.4s ease;
+        }
+
+        .result-card.visible {
+            transform: scale(1);
+            opacity: 1;
+        }
+        
+        .result-card a {
+            color: #2563eb;
+            text-decoration: underline;
+            transition: color 0.2s;
+        }
+        .result-card a:hover {
+            color: #1d4ed8;
+        }
+
+
+        .btn-primary {
+            background-color: #1a3a6b;
+            color: white;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #2a528a;
+            transform: translateY(-2px);
+        }
+
+        /* Character styles */
+        #health-character-face .eye {
+            transition: all 0.3s ease;
+        }
+        #health-character-face .mouth {
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            transform-origin: center;
+        }
+        .blinking {
+            animation: blink 3s infinite;
+        }
+        @keyframes blink {
+            0%, 90%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+        
+        /* Health Bar */
+        .progress-bar-container {
+            height: 20px;
+            background-color: #e0e7ff;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-bar {
+            height: 100%;
+            transition: width 0.8s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <!-- Calculator Card -->
+        <div class="calculator-card p-8 space-y-6">
+            <div class="text-center">
+                <h1 class="text-3xl font-bold text-gray-800">Health & Vitamin Navigator</h1>
+                <p class="text-gray-500 mt-2">Enter your details to assess your vitamin levels.</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label for="age" class="block text-sm font-medium text-gray-700 mb-1">Age</label>
+                    <input type="number" id="age" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" placeholder="e.g., 35">
+                </div>
+                <div>
+                    <label for="gender" class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                    <select id="gender" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="vitamin" class="block text-sm font-medium text-gray-700 mb-1">Vitamin</label>
+                    <select id="vitamin" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"></select>
+                </div>
+                <div>
+                    <label for="blood-level" class="block text-sm font-medium text-gray-700 mb-1">Blood Level (<span id="unit"></span>)</label>
+                    <input type="number" id="blood-level" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" placeholder="Enter value">
+                </div>
+            </div>
+
+            <button id="calculate-btn" class="w-full btn-primary font-bold py-3 px-4 rounded-lg shadow-lg">
+                Assess My Health
+            </button>
+        </div>
+
+        <!-- Results and Character Card -->
+        <div id="result-container" class="result-card p-8 flex flex-col items-center justify-center text-center space-y-4">
+             <!-- Character -->
+            <div id="character-container" class="w-48 h-48">
+                 <svg id="health-character" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <radialGradient id="grad-body" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                            <stop offset="0%" style="stop-color:#80d0c7;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#1a3a6b;stop-opacity:1" />
+                        </radialGradient>
+                    </defs>
+                    <circle cx="50" cy="50" r="45" fill="url(#grad-body)"/>
+                    <g id="health-character-face" transform="translate(0, 5)">
+                        <!-- Eyes -->
+                        <circle class="eye blinking" cx="35" cy="40" r="5" fill="white"/>
+                        <circle cx="36" cy="41" r="2" fill="black"/>
+                        <circle class="eye blinking" cx="65" cy="40" r="5" fill="white"/>
+                        <circle cx="66" cy="41" r="2" fill="black"/>
+                        <!-- Mouth -->
+                        <path class="mouth" id="mouth-neutral" d="M 40 65 Q 50 70 60 65" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+                        <path class="mouth" id="mouth-happy" d="M 40 65 Q 50 80 60 65" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" style="display:none;"/>
+                        <path class="mouth" id="mouth-sad" d="M 40 70 Q 50 60 60 70" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" style="display:none;"/>
+                    </g>
+                </svg>
+            </div>
+
+            <div id="result-content" class="w-full">
+                <h2 id="result-title" class="text-2xl font-bold text-gray-800">Your Results Will Appear Here</h2>
+                <p id="result-message" class="text-gray-600 mt-2">Let's check your vitamin levels!</p>
+                
+                <div id="details-section" class="mt-6 text-left space-y-4" style="display: none;">
+                    <div>
+                        <h3 class="font-semibold text-gray-700"><a href="https://www.mayocliniclabs.com/interpretive-guide" target="_blank" class="hover:opacity-80">Your Level vs. Normal Range</a></h3>
+                        <div class="progress-bar-container mt-2">
+                            <div id="normal-range-bar" class="absolute h-full bg-green-200" style="left: 0%; width: 0%;"></div>
+                            <div id="your-level-indicator" class="absolute top-0 bottom-0 w-1 bg-indigo-600 rounded-full" style="left: 0%;"></div>
+                        </div>
+                         <div class="relative mt-1 text-xs text-gray-500">
+                            <span id="low-range-label" class="absolute" style="left:0%"></span>
+                            <span id="high-range-label" class="absolute" style="right:0%"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        <div>
+                            <h3 class="font-semibold text-gray-700">Key Function</h3>
+                            <p id="key-function" class="text-gray-600"></p>
+                        </div>
+
+                        <div>
+                            <h3 class="font-semibold text-gray-700">Potential Deficiency Effects</h3>
+                            <p id="deficiency-effects" class="text-gray-600"></p>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-700">Targeted Medicines</h3>
+                            <p id="medicines" class="text-gray-600"></p>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-700">Developers/Companies</h3>
+                            <div id="companies" class="text-gray-600 text-sm"></div>
+                        </div>
+                    </div>
+
+                    <!-- ** NEW: Herbal Suggestion Section ** -->
+                    <div id="herbal-suggestion" class="p-4 bg-teal-50 border-l-4 border-teal-400 rounded-r-lg mt-4" style="display: none;">
+                        <div class="flex">
+                            <div class="py-1"><svg class="w-6 h-6 text-teal-500 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg></div>
+                            <div>
+                                <h4 class="font-bold text-teal-800">Herbal Connection</h4>
+                                <p id="herbal-text" class="text-teal-700 text-sm mt-1"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+             const vitaminData = {
+                'B1': { name: 'Thiamine', func: 'Helps convert food to energy and supports nerve health', deficiency: '<a href="https://en.wikipedia.org/wiki/Beriberi" target="_blank">Beriberi</a>, <a href="https://en.wikipedia.org/wiki/Wernicke%E2%80%93Korsakoff_syndrome" target="_blank">Wernicke-Korsakoff syndrome</a>', medicines: 'Allithiamine supplements, solid preparations with ATP salts', companies: '<a href="https://www.ecologicalformulas.net/" target="_blank">Ecological Formulas</a>', unit: 'nmol/L', ranges: { low: 70, normal: [70, 180], high: 180 }, herbalLink: `Fatigue can be a symptom of deficiency. Some traditions use herbs like <a href="https://fmbanafa-debug.github.io/Herbal/#ginseng" target="_blank">Ginseng</a> for energy. Explore the Herbal Guide to learn more.` },
+                'B2': { name: 'Riboflavin', func: 'Helps turn food into energy and acts as an antioxidant', deficiency: '<a href="https://en.wikipedia.org/wiki/Ariboflavinosis" target="_blank">Cheilosis, Glossitis, Seborrheic dermatitis</a>', medicines: 'Solubilized riboflavin for hypodermic, sodium riboflavin 5-phosphate solutions', companies: '<a href="https://www.basf.com/" target="_blank">BASF</a>, <a href="https://www.dsm-firmenich.com/" target="_blank">DSM</a>', unit: 'µg/dL', ranges: { low: 4, normal: [4, 24], high: 24 }, herbalLink: `For general wellness, you can explore the <a href="https://fmbanafa-debug.github.io/Herbal/" target="_blank">Herbal Guide</a> for herbs that support overall health.` },
+                'B3': { name: 'Niacin', func: 'Helps with energy production from food', deficiency: '<a href="https://en.wikipedia.org/wiki/Pellagra" target="_blank">Pellagra</a>', medicines: 'Modified-release niacin formulations (e.g., <a href="https://www.rxlist.com/niaspan-drug.htm" target="_blank">Niaspan</a>)', companies: '<a href="https://www.abbott.com/" target="_blank">Abbott Laboratories</a>', unit: 'mg/L', ranges: { low: 0.5, normal: [0.5, 8.4], high: 8.4 }, herbalLink: `For general wellness, you can explore the <a href="https://fmbanafa-debug.github.io/Herbal/" target="_blank">Herbal Guide</a> for herbs that support overall health.` },
+                'B5': { name: 'Pantothenic acid', func: 'Helps metabolize food and supports healthy skin and hair', deficiency: '<a href="https://en.wikipedia.org/wiki/Paresthesia" target="_blank">Burning foot syndrome</a>', medicines: 'Multivitamin formulations with enhanced absorption salts', companies: 'Limited specific developments; general use in effervescent forms', unit: 'µg/mL', ranges: { low: 0.2, normal: [0.2, 1.8], high: 1.8 }, herbalLink: `For general wellness, you can explore the <a href="https://fmbanafa-debug.github.io/Herbal/" target="_blank">Herbal Guide</a> for herbs that support overall health.` },
+                'B6': { name: 'Pyridoxine', func: 'Helps process proteins and make red blood cells', deficiency: '<a href="https://en.wikipedia.org/wiki/Microcytic_anemia" target="_blank">Microcytic anemia</a>', medicines: 'Doxylamine-pyridoxine combinations (e.g., <a href="https://www.diclegis.com/" target="_blank">Diclegis</a>), pyridoxine salts with hydroxylbenzoic acids', companies: '<a href="https://duchesnay.com/en" target="_blank">Duchesnay Inc.</a>, various patent holders', unit: 'nmol/L', ranges: { low: 20, normal: [20, 108], high: 108 }, herbalLink: `Some symptoms of deficiency, like nausea, are sometimes addressed with herbs like <a href="https://fmbanafa-debug.github.io/Herbal/#ginger" target="_blank">Ginger</a>. Explore the Herbal Guide to learn more.` },
+                'H/B7': { name: 'Biotin', func: 'Helps turn food into energy and keeps hair, skin, and nails healthy', deficiency: '<a href="https://en.wikipedia.org/wiki/Biotin_deficiency" target="_blank">Carboxylase deficiency</a>', medicines: 'Delayed-release biotin tablets, magnesium biotinate', companies: 'Russian patent holders, general supplement companies', unit: 'ng/mL', ranges: { low: 0.2, normal: [0.2, 0.8], high: 0.8 }, herbalLink: `For general wellness, you can explore the <a href="https://fmbanafa-debug.github.io/Herbal/" target="_blank">Herbal Guide</a> for herbs that support overall health.` },
+                'B9': { name: 'Folic acid', func: 'Important for cell growth and red blood cell production', deficiency: '<a href="https://en.wikipedia.org/wiki/Megaloblastic_anemia" target="_blank">Megaloblastic anemia</a>', medicines: 'Chewable folic acid supplements, <a href="https://quatrefolic.com/" target="_blank">Quatrefolic</a> (glucosamine salt)', companies: '<a href="https://gnosisbylesaffre.com/" target="_blank">Gnosis by Lesaffre</a>', unit: 'ng/mL', ranges: { low: 2.7, normal: [2.7, 20], high: 20 }, herbalLink: `Fatigue can be a symptom of deficiency. Some traditions use herbs like <a href="https://fmbanafa-debug.github.io/Herbal/#ginseng" target="_blank">Ginseng</a> for energy. Explore the Herbal Guide to learn more.` },
+                'B12': { name: 'Cobalamin', func: 'Supports red blood cell formation and nerve function', deficiency: '<a href="https://en.wikipedia.org/wiki/Vitamin_B12_deficiency" target="_blank">Macrocytic anemia and/or pernicious anemia</a>', medicines: 'Stable liquid vitamin B12 formulations, <a href="https://www.nhs.uk/medicines/hydroxocobalamin/" target="_blank">hydroxocobalamin injections</a>', companies: '<a href="http://www.techtransfer.nih.gov/home" target="_blank">NIH tech transfer</a>, general pharma', unit: 'pg/mL', ranges: { low: 200, normal: [200, 900], high: 900 }, herbalLink: `Fatigue and mood changes can be symptoms of deficiency. Some explore herbs like <a href="https://fmbanafa-debug.github.io/Herbal/#ginseng" target="_blank">Ginseng</a> for energy and <a href="https://fmbanafa-debug.github.io/Herbal/#st-johns-wort" target="_blank">St. John's Wort</a> for mood support.` },
+                'C': { name: 'Ascorbic acid', func: 'Boosts immune system and aids wound healing', deficiency: '<a href="https://en.wikipedia.org/wiki/Scurvy" target="_blank">Scurvy</a>', medicines: 'Ascorbic acid salts of organic bases, immune-enhancing compositions', companies: 'Patent holders for topical and oral forms', unit: 'mg/dL', ranges: { low: 0.2, normal: [0.2, 2.0], high: 2.0 }, herbalLink: `For immune support, some people explore herbs like <a href="https://fmbanafa-debug.github.io/Herbal/#echinacea" target="_blank">Echinacea</a>. Visit the Herbal Guide for more information.` },
+                'A': { name: 'Retinol', func: 'Supports vision and healthy skin', deficiency: '<a href="https://en.wikipedia.org/wiki/Night_blindness" target="_blank">Night blindness</a>', medicines: 'Natural-source retinol derivatives, retinol in skin care formulations', companies: '<a href="https://conagen.com/" target="_blank">Conagen</a>, <a href="https://www.jnj.com/" target="_blank">Johnson & Johnson</a> (<a href="https://www.rocskincare.com/" target="_blank">RoC</a>)', unit: 'mcg/dL', ranges: { low: 20, normal: [20, 86], high: 86 }, herbalLink: `For general wellness, you can explore the <a href="https://fmbanafa-debug.github.io/Herbal/" target="_blank">Herbal Guide</a> for herbs that support overall health.` },
+                'D': { name: 'Calciferol', func: 'Helps absorb calcium for strong bones', deficiency: '<a href="https://en.wikipedia.org/wiki/Rickets" target="_blank">Rickets</a>', medicines: 'Stabilized modified-release vitamin D, controlled-release oral formulations e.g., (<a href="https://rayaldee.com/" target="_blank">Rayaldee</a>)', companies: '<a href="https://www.opko.com/" target="_blank">Opko Health</a>, patent holders', unit: 'ng/mL', ranges: { low: 20, normal: [20, 50], high: 50 }, herbalLink: `Vitamin D is crucial for immunity. Some also explore herbs like <a href="https://fmbanafa-debug.github.io/Herbal/#echinacea" target="_blank">Echinacea</a> for immune support. Visit the Herbal Guide to learn more.` },
+                'E': { name: 'Tocopherol', func: 'Protects cells from damage as an antioxidant', deficiency: '<a href="https://en.wikipedia.org/wiki/Vitamin_E_deficiency" target="_blank">RBC fragility</a>', medicines: 'd-alpha-tocopheryl polyethylene glycol succinate (<a href="https://www.eastman.com/en/products/vitamin-e-tpgs" target="_blank">TPGS</a>) for drug delivery', companies: '<a href="https://www.eastman.com/en" target="_blank">Eastman Chemical Company</a>', unit: 'mg/L', ranges: { low: 5.5, normal: [5.5, 17], high: 17 }, herbalLink: `As an antioxidant, Vitamin E helps with inflammation. <a href="https://fmbanafa-debug.github.io/Herbal/#turmeric" target="_blank">Turmeric</a> is another natural option studied for its anti-inflammatory properties. Explore the Herbal Guide to learn more.` },
+                'K1': { name: 'Phytanadione', func: 'Essential for blood clotting', deficiency: '<a href="https://en.wikipedia.org/wiki/Hemorrhage" target="_blank">Hemorrhage</a>', medicines: 'Phytonadione tablets and injections (e.g., <a href="https://www.bauschhealth.com/products/us-product-list/" target="_blank">Mephyton</a>)', companies: '<a href="https://www.amphastar.com/" target="_blank">Amphastar Pharmaceuticals</a>, <a href="https://www.merck.com/" target="_blank">Merck</a>', unit: 'ng/mL', ranges: { low: 0.2, normal: [0.2, 3.2], high: 3.2 }, herbalLink: `For general wellness, you can explore the <a href="https://fmbanafa-debug.github.io/Herbal/" target="_blank">Herbal Guide</a> for herbs that support overall health.` },
+            };
+
+            const vitaminSelect = document.getElementById('vitamin');
+            const unitSpan = document.getElementById('unit');
+            const calculateBtn = document.getElementById('calculate-btn');
+            const resultContainer = document.getElementById('result-container');
+            const resultTitle = document.getElementById('result-title');
+            const resultMessage = document.getElementById('result-message');
+            const detailsSection = document.getElementById('details-section');
+
+            Object.keys(vitaminData).forEach(key => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = `Vitamin ${key} (${vitaminData[key].name})`;
+                vitaminSelect.appendChild(option);
+            });
+
+            const updateUnits = () => {
+                unitSpan.textContent = vitaminData[vitaminSelect.value].unit;
+            };
+            vitaminSelect.addEventListener('change', updateUnits);
+            updateUnits();
+
+            const setCharacterExpression = (expression) => {
+                document.querySelectorAll('#health-character-face .mouth').forEach(m => m.style.display = 'none');
+                const eyes = document.querySelectorAll('#health-character-face .eye');
+                
+                if (expression === 'happy') {
+                    document.getElementById('mouth-happy').style.display = 'block';
+                    eyes.forEach(eye => eye.setAttribute('cy', '38'));
+                } else if (expression === 'sad') {
+                    document.getElementById('mouth-sad').style.display = 'block';
+                    eyes.forEach(eye => eye.setAttribute('cy', '42'));
+                } else {
+                    document.getElementById('mouth-neutral').style.display = 'block';
+                    eyes.forEach(eye => eye.setAttribute('cy', '40'));
+                }
+            };
+            
+            calculateBtn.addEventListener('click', () => {
+                const vitaminKey = vitaminSelect.value;
+                const bloodLevel = parseFloat(document.getElementById('blood-level').value);
+
+                if (isNaN(bloodLevel)) {
+                    resultTitle.textContent = 'Invalid Input';
+                    resultMessage.textContent = 'Please enter a valid blood level.';
+                    setCharacterExpression('sad');
+                    detailsSection.style.display = 'none';
+                    resultContainer.classList.add('visible');
+                    return;
+                }
+
+                const vitamin = vitaminData[vitaminKey];
+                const [normalMin, normalMax] = vitamin.ranges.normal;
+                let status = '';
+                let statusColor = '';
+                
+                if (bloodLevel < normalMin) {
+                    status = 'Low';
+                    statusColor = 'text-orange-500';
+                    setCharacterExpression('sad');
+                } else if (bloodLevel > normalMax) {
+                    status = 'High';
+                    statusColor = 'text-red-500';
+                    setCharacterExpression('sad');
+                } else {
+                    status = 'Normal';
+                    statusColor = 'text-green-500';
+                    setCharacterExpression('happy');
+                }
+
+                resultTitle.textContent = `Your Vitamin ${vitaminKey} level is ${status}`;
+                resultTitle.className = `text-2xl font-bold ${statusColor}`;
+                resultMessage.textContent = `Based on your input, your blood level is ${bloodLevel} ${vitamin.unit}.`;
+                
+                document.getElementById('key-function').innerHTML = vitamin.func;
+                document.getElementById('deficiency-effects').innerHTML = vitamin.deficiency;
+                document.getElementById('medicines').innerHTML = vitamin.medicines;
+                document.getElementById('companies').innerHTML = vitamin.companies;
+
+                const fullRange = normalMax * 1.5;
+                const yourLevelPercent = (bloodLevel / fullRange) * 100;
+                const normalMinPercent = (normalMin / fullRange) * 100;
+                const normalMaxPercent = (normalMax / fullRange) * 100;
+                
+                document.getElementById('your-level-indicator').style.left = `${Math.min(yourLevelPercent, 100)}%`;
+                
+                const normalRangeBar = document.getElementById('normal-range-bar');
+                normalRangeBar.style.left = `${normalMinPercent}%`;
+                normalRangeBar.style.width = `${normalMaxPercent - normalMinPercent}%`;
+
+                document.getElementById('low-range-label').textContent = `${normalMin} ${vitamin.unit}`;
+                document.getElementById('low-range-label').style.left = `${normalMinPercent}%`;
+                document.getElementById('high-range-label').textContent = `${normalMax} ${vitamin.unit}`;
+                document.getElementById('high-range-label').style.right = `${100 - normalMaxPercent}%`;
+                
+                // ** NEW: Herbal Logic **
+                const herbalSuggestionDiv = document.getElementById('herbal-suggestion');
+                const herbalTextP = document.getElementById('herbal-text');
+                if (status === 'Low' && vitamin.herbalLink) {
+                    herbalTextP.innerHTML = vitamin.herbalLink;
+                    herbalSuggestionDiv.style.display = 'block';
+                } else {
+                    herbalSuggestionDiv.style.display = 'none';
+                }
+
+                detailsSection.style.display = 'block';
+                resultContainer.classList.add('visible');
+            });
+            
+            setCharacterExpression('neutral');
+        });
+    </script>
+</body>
+</html>
+
+
